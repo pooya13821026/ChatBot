@@ -2,6 +2,7 @@ import dotenv
 import os
 from openai import OpenAI
 import tiktoken
+from transformers import AutoTokenizer
 
 dotenv.load_dotenv()
 
@@ -42,7 +43,7 @@ class ChatBot:
         return response_text
 
     def chat(self):
-        encoding = tiktoken.get_encoding('cl100k_base')
+        encoding = AutoTokenizer.from_pretrained('Qwen/Qwen3.8-27B')
         while True:
             user_input = input("Enter your message (type x to terminate) : ").strip().lower()
 
@@ -51,9 +52,13 @@ class ChatBot:
                 break
 
             tokens_count = len(encoding.encode(user_input))
+            print(tokens_count)
             if tokens_count > 10:
                 print('your prompt exceeded limit, please make shorter')
                 continue
+
+            if tokens_count > 100:
+                print('unfortunately you exceeded the total limit for today.')
 
             print(self.bot(user_input))
 
