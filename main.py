@@ -17,6 +17,8 @@ class ChatBot:
         ]
 
         self.total_tokens = 0
+        self.input_tokens = 0
+        self.output_tokens = 0
 
     def bot(self, message):
 
@@ -33,6 +35,9 @@ class ChatBot:
         self.messages.append({'role': 'assistant', 'content': response_text})
 
         self.total_tokens = self.total_tokens + response.usage.total_tokens
+        self.input_tokens = self.input_tokens + response.usage.prompt_tokens
+        self.output_tokens = self.output_tokens + response.usage.completion_tokens
+
         return response_text
 
     def chat(self):
@@ -50,6 +55,9 @@ class ChatBot:
             print(message)
 
         print(f'total tokens: {self.total_tokens}')
+        print(f'input tokens: {self.input_tokens}')
+        print(f'output tokens: {self.output_tokens}')
+        print(f'$: {(self.input_tokens * 0.05 + self.output_tokens * 0.08) / 1000000}')
 
 
 def main():
