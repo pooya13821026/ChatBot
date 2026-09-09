@@ -24,7 +24,30 @@ class ChatBot:
         self.input_tokens = 0
         self.output_tokens = 0
 
-    def trim_message(self, max_count=4):
+        self.iteration = 0
+
+    def summerize_message(self):
+        if self.iteration % 5 != 0:
+            return
+
+        system_message = [m for m in self.messages if m['role'] == 'system']
+        other_message = [m for m in self.messages if m['role'] != 'system']
+
+        first_messages, last_messages = (other_message[0:5], other_message[5:])
+
+        response = self.llm.chat.completions.create(
+            model='qwen/qwen3.8-27b',
+            messages=[{'role': 'system', 'content': 'summerize these messages'}, *first_messages],
+            temperature=0.7
+        )
+
+        summerized_message = {'role': 'system',
+                              'content': f'summery of 5 messages :{response.choices[0].message.content}'
+                              }
+
+        self.messages = [*system_message, summerized_message, *last_messages]
+
+    def trim_message(self, max_count=5):
         if len(self.messages) < max_count:
             return
 
@@ -42,7 +65,7 @@ class ChatBot:
             model='qwen/qwen3.8-27b',
             messages=self.messages,
             temperature=0.7,
-            max_tokens=100,
+            # max_tokens=1000,
             stream=True
         )
 
@@ -63,11 +86,12 @@ class ChatBot:
         print()
         self.messages.append({'role': 'assistant', 'content': response_text})
 
-        self.trim_message()
+        self.summerize_message()
 
     def chat(self):
         encoding = AutoTokenizer.from_pretrained('Qwen/Qwen3.8-27B')
         while True:
+            self.iteration += 1
             user_input = input("Enter your message (type x to terminate) : ").strip().lower()
 
             if user_input == 'x':
@@ -75,7 +99,6 @@ class ChatBot:
                 break
 
             tokens_count = len(encoding.encode(user_input))
-            # print(tokens_count)
             if tokens_count > 100:
                 print('your prompt exceeded limit, please make shorter')
                 continue
