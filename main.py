@@ -30,17 +30,25 @@ class ChatBot:
             messages=self.messages,
             temperature=0.7,
             max_tokens=100,
-            # stream=True
+            stream=True
         )
 
-        response_text = response.choices[0].message.content
+        response_text = ''
+        for chunk in response:
+            if chunk.choices:
+                delta = chunk.choices[0].delta.content
+
+                if delta:
+                    print(delta, end='', flush=True)
+                    response_text += delta
+
+            if chunk.usage:
+                self.total_tokens = self.total_tokens + chunk.usage.total_tokens
+                self.input_tokens = self.input_tokens + chunk.usage.prompt_tokens
+                self.output_tokens = self.output_tokens + chunk.usage.completion_tokens
+
+        print()
         self.messages.append({'role': 'assistant', 'content': response_text})
-
-        self.total_tokens = self.total_tokens + response.usage.total_tokens
-        self.input_tokens = self.input_tokens + response.usage.prompt_tokens
-        self.output_tokens = self.output_tokens + response.usage.completion_tokens
-
-        return response_text
 
     def chat(self):
         encoding = AutoTokenizer.from_pretrained('Qwen/Qwen3.8-27B')
