@@ -1,3 +1,5 @@
+import time
+
 import dotenv
 import os
 from openai import OpenAI
@@ -21,6 +23,17 @@ class ChatBot:
         self.total_tokens = 0
         self.input_tokens = 0
         self.output_tokens = 0
+
+    def trim_message(self, max_count=4):
+        if len(self.messages) < max_count:
+            return
+
+        system_message = [m for m in self.messages if m['role'] == 'system']
+        other_message = [m for m in self.messages if m['role'] != 'system']
+
+        trimed_messages = other_message[-max_count:]
+
+        self.messages = [*system_message, *trimed_messages]
 
     def bot(self, message):
 
@@ -50,6 +63,8 @@ class ChatBot:
         print()
         self.messages.append({'role': 'assistant', 'content': response_text})
 
+        self.trim_message()
+
     def chat(self):
         encoding = AutoTokenizer.from_pretrained('Qwen/Qwen3.8-27B')
         while True:
@@ -60,15 +75,16 @@ class ChatBot:
                 break
 
             tokens_count = len(encoding.encode(user_input))
-            print(tokens_count)
-            if tokens_count > 10:
+            # print(tokens_count)
+            if tokens_count > 100:
                 print('your prompt exceeded limit, please make shorter')
                 continue
 
-            if tokens_count > 100:
+            if tokens_count > 10000:
                 print('unfortunately you exceeded the total limit for today.')
 
-            print(self.bot(user_input))
+            result = self.bot(user_input)
+            print(result)
 
     def report(self):
         for message in self.messages:
